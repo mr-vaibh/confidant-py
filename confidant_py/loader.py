@@ -1,4 +1,5 @@
 import json
+import hashlib
 import requests
 from pathlib import Path
 from requests.exceptions import ConnectionError as ReqConnectionError, RequestException
@@ -14,11 +15,10 @@ from .exceptions import (
 DEFAULT_CREDENTIALS_FILE = "confidant-cred.json"
 API_URL = "http://localhost:8000/api/get-sdk-keys/"
 
-
 class ConfidantLoader:
     def __init__(self, credentials_file=DEFAULT_CREDENTIALS_FILE):
         self.credentials_file = credentials_file
-        self.username, self.private_key = self.load_credentials()
+        self.username, self.public_key, self.private_key = self.load_credentials()
 
     def load_credentials(self):
         """Loads credentials from the JSON file."""
@@ -33,15 +33,29 @@ class ConfidantLoader:
         except json.JSONDecodeError:
             raise InvalidCredentialsFormatError()
 
-        if "username" not in credentials or "private_key" not in credentials:
+        if "username" not in credentials or "public_key" not in credentials or "private_key" not in credentials:
             raise InvalidCredentialsFormatError()
 
-        return credentials["username"], credentials["private_key"]
+        return credentials["username"], credentials["public_key"], credentials["private_key"]
+
+    def compute_public_key_hash(self):
+        """Computes the SHA-256 hash of the stored public key."""
+        return hashlib.sha256(self.public_key.encode()).hexdigest()
 
     def fetch_encrypted_envs(self):
-        """Fetches encrypted environment variables from the API."""
+        """Fetches encrypted environment variables from the API with username and public key hash in headers."""
+        headers = {
+            "X-Username": self.username,  # Send username in headers
+            "X-Public-Key-Hash": self.compute_public_key_hash(),  # Send SHA-256 hash of the public key
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "username": self.username  # Send username in JSON body
+        }
+
         try:
-            response = requests.post(API_URL, json={"username": self.username})
+            response = requests.post(API_URL, headers=headers, json=payload)
         except ReqConnectionError:
             raise APIServerUnavailableError()
         except RequestException as e:

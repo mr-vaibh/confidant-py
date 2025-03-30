@@ -20,19 +20,28 @@ print(envs)
 
 
 ## **4. Publish to PyPI**
-1. Install necessary tools:
+### Install necessary tools:
 ```sh
 pip install setuptools wheel twine
 ```
 
-2. Build the package
+### Build the package
 
 ```sh
 python setup.py sdist bdist_wheel
 ```
 
-3. Upload to PyPI:
+### Upload to PyPI:
 
 ```sh
+twine upload dist/*
+```
+
+### Updating the package
+
+Bump the version in `setup.py` (e.g., 0.1.1).
+
+```sh
+python setup.py sdist bdist_wheel
 twine upload dist/*
 ```

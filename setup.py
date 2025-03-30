@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="confidant-py",
-    version="0.1.0",
+    version="0.2.0",
     author="Vaibhav",
     author_email="shuklavaibhav336@gmail.com",
     description="Multi platform scalable environment variables manager.",
